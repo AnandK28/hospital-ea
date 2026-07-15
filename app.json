@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "Hospital Records",
+    "slug": "hospital-records",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#101613",
+    "icon": "./assets/icon.png",
+    "android": {
+      "package": "com.anandk28.hospitalapp",
+      "permissions": [],
+      "backgroundColor": "#101613",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#101613"
+      }
+    },
+    "plugins": [
+      "expo-sqlite"
+    ]
+  }
+}
