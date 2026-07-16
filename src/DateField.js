@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Platform } from "r
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, radii } from "./theme";
-import { isoToDisplay, displayToIso } from "./dateUtils";
+import { isoToDisplay, displayToIso, formatTypingInput } from "./dateUtils";
 
 // value/onChange work in ISO (YYYY-MM-DD) so it stays consistent with storage & search.
 export default function DateField({ label, value, onChange }) {
@@ -11,8 +11,9 @@ export default function DateField({ label, value, onChange }) {
   const [text, setText] = useState(isoToDisplay(value));
 
   const handleTextChange = (t) => {
-    setText(t);
-    const iso = displayToIso(t);
+    const formatted = formatTypingInput(t);
+    setText(formatted);
+    const iso = displayToIso(formatted);
     onChange(iso);
   };
 
@@ -33,12 +34,12 @@ export default function DateField({ label, value, onChange }) {
       <View style={styles.row}>
         <TextInput
           style={styles.input}
-          placeholder="DD/MM/YYYY"
+          placeholder="DD/MM/YY"
           placeholderTextColor={colors.textMuted}
           value={text}
           onChangeText={handleTextChange}
           keyboardType="number-pad"
-          maxLength={10}
+          maxLength={8}
         />
         <TouchableOpacity style={styles.calBtn} onPress={() => setShowPicker(true)}>
           <Ionicons name="calendar-outline" size={20} color={colors.primary} />

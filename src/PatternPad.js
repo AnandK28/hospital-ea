@@ -3,8 +3,8 @@ import { View, StyleSheet, PanResponder } from "react-native";
 import { colors } from "./theme";
 
 const PAD_SIZE = 260;
-const DOT_SIZE = 26;
-const HIT_RADIUS = 34;
+const DOT_SIZE = 28;
+const HIT_RADIUS = 40;
 
 // Precompute the 9 dot centers in a 3x3 grid within PAD_SIZE.
 const CENTERS = [];
@@ -19,14 +19,15 @@ for (let row = 0; row < 3; row++) {
 export default function PatternPad({ onComplete }) {
   const [sequence, setSequence] = useState([]);
   const seqRef = useRef([]);
-  const containerRef = useRef(null);
-  const originRef = useRef({ x: 0, y: 0 });
 
   const updateSeq = (next) => {
     seqRef.current = next;
     setSequence([...next]);
   };
 
+  // localX/localY are relative to the pad itself (via locationX/locationY,
+  // which React Native computes for us — no manual screen-position
+  // measuring needed, which was unreliable across devices).
   const tryAddDot = (localX, localY) => {
     for (let i = 0; i < CENTERS.length; i++) {
       if (seqRef.current.includes(i)) continue;
@@ -45,30 +46,47 @@ export default function PatternPad({ onComplete }) {
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: (evt) => {
         updateSeq([]);
-        const { pageX, pageY } = evt.nativeEvent;
-        tryAddDot(pageX - originRef.current.x, pageY - originRef.current.y);
+        const { locationX, locationY } = evt.nativeEvent;
+        tryAddDot(locationX, locationY);
       },
       onPanResponderMove: (evt) => {
-        const { pageX, pageY } = evt.nativeEvent;
-        tryAddDot(pageX - originRef.current.x, pageY - originRef.current.y);
+        const { locationX, locationY } = evt.nativeEvent;
+        tryAddDot(locationX, locationY);
       },
       onPanResponderRelease: () => {
+        onComplete(seqRef.current.join("-"), seqRef.current.length);
+      },
+      onPanResponderTerminate: () => {
         onComplete(seqRef.current.join("-"), seqRef.current.length);
       },
     })
   ).current;
 
   return (
-    <View
-      ref={containerRef}
-      style={styles.pad}
-      onLayout={() => {
-        containerRef.current?.measure((x, y, w, h, pageX, pageY) => {
-          originRef.current = { x: pageX, y: pageY };
-        });
-      }}
-      {...panResponder.panHandlers}
-    >
+    <View style={styles.pad} {...panResponder.panHandlers}>
+      {sequence.slice(1).map((idx, i) => {
+        const from = CENTERS[sequence[i]];
+        const to = CENTERS[idx];
+        const dx = to.x - from.x;
+        const dy = to.y - from.y;
+        const length = Math.sqrt(dx * dx + dy * dy);
+        const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+        return (
+          <View
+            key={`line-${i}`}
+            pointerEvents="none"
+            style={[
+              styles.line,
+              {
+                width: length,
+                left: from.x,
+                top: from.y - 2,
+                transform: [{ translateY: -1 }, { rotate: `${angle}deg` }],
+              },
+            ]}
+          />
+        );
+      })}
       {CENTERS.map((c, i) => {
         const active = sequence.includes(i);
         return (
@@ -103,5 +121,11 @@ const styles = StyleSheet.create({
     height: DOT_SIZE,
     borderRadius: DOT_SIZE / 2,
     borderWidth: 2,
+  },
+  line: {
+    position: "absolute",
+    height: 3,
+    backgroundColor: colors.primary,
+    transformOrigin: "left center",
   },
 });

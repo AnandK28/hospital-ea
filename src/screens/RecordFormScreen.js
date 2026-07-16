@@ -45,11 +45,12 @@ export default function RecordFormScreen({ mode, stayId, onBack, onSaved }) {
   const handleBack = useCallback(() => {
     if (isDirty()) {
       Alert.alert(
-        "Discard changes?",
-        "You have unsaved changes. Are you sure you want to go back?",
+        "Unsaved changes",
+        "Do you want to save your changes before leaving?",
         [
-          { text: "Keep editing", style: "cancel" },
+          { text: "Cancel", style: "cancel" },
           { text: "Discard", style: "destructive", onPress: onBack },
+          { text: "Save", onPress: save },
         ]
       );
     } else {

@@ -45,11 +45,11 @@ export async function initDb() {
   // No demo data is seeded — the app starts empty, ready for real records.
   const lock = await db.getFirstAsync("SELECT value FROM app_meta WHERE key = ?", ["lock"]);
   if (!lock) {
-    // Default lock: S-shaped pattern connecting dots 1-2-3-6-5-4-7-8-9
-    // (0-indexed grid positions: 0-1-2-5-4-3-6-7-8)
+    // Default lock: pattern connecting dots 3-2-1-4-5-6-9-8-7
+    // (0-indexed grid positions: 2-1-0-3-4-5-8-7-6)
     await db.runAsync("INSERT INTO app_meta (key, value) VALUES (?, ?)", [
       "lock",
-      JSON.stringify({ type: "pattern", value: "0-1-2-5-4-3-6-7-8" }),
+      JSON.stringify({ type: "pattern", value: "2-1-0-3-4-5-8-7-6" }),
     ]);
   }
 }
