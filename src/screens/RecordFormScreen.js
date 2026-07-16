@@ -3,44 +3,57 @@ import {
   View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert, BackHandler,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { addPatientAndStay, updatePatientAndStay, getStayDetail, isMrnTaken } from "../db";
+import {
+  addPatientAndStay, updatePatientAndStay, getStayDetail, isMrnTaken, getMedications,
+} from "../db";
 import { colors, radii } from "../theme";
 import DateField from "../DateField";
 
-const TEXT_FIELDS_TOP = [
+const PATIENT_FIELDS = [
   { key: "first_name", label: "First name" },
   { key: "last_name", label: "Last name" },
   { key: "mrn", label: "MRN (unique)" },
+  { key: "rch_id", label: "RCH ID" },
+  { key: "phone_number", label: "Patient phone number" },
+  { key: "address", label: "Address", multiline: true },
+  { key: "vhn_name", label: "VHN name" },
+  { key: "vhn_number", label: "VHN number" },
 ];
 
-const TEXT_FIELDS_BOTTOM = [
+const STAY_FIELDS = [
   { key: "primary_diagnosis", label: "Primary diagnosis" },
-  { key: "daily_progress_notes", label: "Daily progress notes", multiline: true },
   { key: "hospital_course", label: "Hospital course", multiline: true },
-  { key: "treatment_given", label: "Treatment given", multiline: true },
   { key: "discharge_condition", label: "Discharge condition", multiline: true },
-  { key: "discharge_advice", label: "Discharge advice", multiline: true },
 ];
+
+const emptyMed = () => ({ drug_name: "", frequency: "", duration: "" });
 
 // mode: "add" | "edit". When editing, pass stayId.
 export default function RecordFormScreen({ mode, stayId, onBack, onSaved }) {
   const [form, setForm] = useState({});
+  const [medications, setMedications] = useState([emptyMed()]);
   const [patientId, setPatientId] = useState(null);
   const [loading, setLoading] = useState(mode === "edit");
   const initialSnapshot = useRef("{}");
 
   useEffect(() => {
     if (mode === "edit" && stayId) {
-      getStayDetail(stayId).then((detail) => {
+      Promise.all([getStayDetail(stayId), getMedications(stayId)]).then(([detail, meds]) => {
         setForm(detail);
         setPatientId(detail.patient_id);
-        initialSnapshot.current = JSON.stringify(detail);
+        const medRows = meds.length > 0
+          ? meds.map((m) => ({ drug_name: m.drug_name, frequency: m.frequency, duration: m.duration }))
+          : [emptyMed()];
+        setMedications(medRows);
+        initialSnapshot.current = JSON.stringify({ detail, medRows });
         setLoading(false);
       });
+    } else {
+      initialSnapshot.current = JSON.stringify({ detail: form, medRows: medications });
     }
   }, [mode, stayId]);
 
-  const isDirty = () => JSON.stringify(form) !== initialSnapshot.current;
+  const isDirty = () => JSON.stringify({ detail: form, medRows: medications }) !== initialSnapshot.current;
 
   const handleBack = useCallback(() => {
     if (isDirty()) {
@@ -56,17 +69,22 @@ export default function RecordFormScreen({ mode, stayId, onBack, onSaved }) {
     } else {
       onBack();
     }
-  }, [form, onBack]);
+  }, [form, medications, onBack]);
 
   useEffect(() => {
     const sub = BackHandler.addEventListener("hardwareBackPress", () => {
       handleBack();
-      return true; // always intercept while this screen is open
+      return true;
     });
     return () => sub.remove();
   }, [handleBack]);
 
   const setField = (key, value) => setForm((f) => ({ ...f, [key]: value }));
+
+  const updateMedRow = (idx, key, value) =>
+    setMedications((rows) => rows.map((r, i) => (i === idx ? { ...r, [key]: value } : r)));
+  const addMedRow = () => setMedications((rows) => [...rows, emptyMed()]);
+  const removeMedRow = (idx) => setMedications((rows) => rows.filter((_, i) => i !== idx));
 
   const save = async () => {
     if (!form.first_name || !form.last_name || !form.mrn || !form.primary_diagnosis) {
@@ -78,15 +96,16 @@ export default function RecordFormScreen({ mode, stayId, onBack, onSaved }) {
       Alert.alert("MRN already in use", "Another patient already has this MRN. Please use a unique one.");
       return;
     }
+    const cleanMeds = medications.filter((m) => m.drug_name && m.drug_name.trim());
     try {
       if (mode === "edit") {
-        await updatePatientAndStay(stayId, patientId, form);
+        await updatePatientAndStay(stayId, patientId, form, cleanMeds);
         Alert.alert("Record updated");
       } else {
-        await addPatientAndStay(form);
+        await addPatientAndStay(form, cleanMeds);
         Alert.alert("Record saved");
       }
-      initialSnapshot.current = JSON.stringify(form);
+      initialSnapshot.current = JSON.stringify({ detail: form, medRows: medications });
       onSaved();
     } catch (e) {
       Alert.alert("Error", String(e.message || e));
@@ -123,17 +142,65 @@ export default function RecordFormScreen({ mode, stayId, onBack, onSaved }) {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        {TEXT_FIELDS_TOP.map(renderTextField)}
+        <Text style={styles.sectionTitle}>Patient</Text>
+        {PATIENT_FIELDS.map(renderTextField)}
 
-        <View style={styles.fieldWrap}>
-          <DateField
-            label="DOB"
-            value={form.dob}
-            onChange={(iso) => setField("dob", iso)}
-          />
+        <Text style={styles.sectionTitle}>Stay</Text>
+        <View style={styles.dateRow}>
+          <View style={styles.dateHalf}>
+            <DateField
+              label="Date of admission"
+              value={form.admission_date}
+              onChange={(iso) => setField("admission_date", iso)}
+            />
+          </View>
+          <View style={styles.dateHalf}>
+            <DateField
+              label="Date of discharge"
+              value={form.discharge_date}
+              onChange={(iso) => setField("discharge_date", iso)}
+            />
+          </View>
         </View>
+        {STAY_FIELDS.map(renderTextField)}
 
-        {TEXT_FIELDS_BOTTOM.map(renderTextField)}
+        <Text style={styles.sectionTitle}>Medications</Text>
+        {medications.map((m, idx) => (
+          <View key={idx} style={styles.medRow}>
+            <View style={styles.medInputs}>
+              <TextInput
+                style={[styles.input, styles.medDrug]}
+                placeholder="Drug"
+                placeholderTextColor={colors.textMuted}
+                value={m.drug_name}
+                onChangeText={(v) => updateMedRow(idx, "drug_name", v)}
+              />
+              <TextInput
+                style={[styles.input, styles.medSmall]}
+                placeholder="Frequency"
+                placeholderTextColor={colors.textMuted}
+                value={m.frequency}
+                onChangeText={(v) => updateMedRow(idx, "frequency", v)}
+              />
+              <TextInput
+                style={[styles.input, styles.medSmall]}
+                placeholder="Duration"
+                placeholderTextColor={colors.textMuted}
+                value={m.duration}
+                onChangeText={(v) => updateMedRow(idx, "duration", v)}
+              />
+            </View>
+            {medications.length > 1 && (
+              <TouchableOpacity onPress={() => removeMedRow(idx)} style={styles.medRemoveBtn}>
+                <Ionicons name="trash-outline" size={18} color={colors.danger} />
+              </TouchableOpacity>
+            )}
+          </View>
+        ))}
+        <TouchableOpacity style={styles.addMedBtn} onPress={addMedRow}>
+          <Ionicons name="add" size={16} color={colors.primary} />
+          <Text style={styles.addMedBtnText}>Add Medication</Text>
+        </TouchableOpacity>
 
         <TouchableOpacity style={styles.saveBtn} onPress={save}>
           <Text style={styles.saveBtnText}>
@@ -162,6 +229,15 @@ const styles = StyleSheet.create({
   topBarBtn: { color: colors.primary, fontSize: 15, fontWeight: "600" },
   backRow: { flexDirection: "row", alignItems: "center", gap: 2 },
   content: { padding: 20 },
+  sectionTitle: {
+    color: colors.primary,
+    fontSize: 13,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+    marginTop: 10,
+    marginBottom: 10,
+  },
   fieldWrap: { marginBottom: 14 },
   fieldLabel: { fontSize: 11, fontWeight: "700", color: colors.textSecondary, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 },
   input: {
@@ -174,6 +250,23 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   multiline: { minHeight: 70, textAlignVertical: "top" },
+  dateRow: { flexDirection: "row", gap: 10, marginBottom: 14 },
+  dateHalf: { flex: 1 },
+  medRow: { flexDirection: "row", alignItems: "center", marginBottom: 10, gap: 8 },
+  medInputs: { flex: 1, flexDirection: "row", gap: 8 },
+  medDrug: { flex: 2 },
+  medSmall: { flex: 1 },
+  medRemoveBtn: { padding: 6 },
+  addMedBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "flex-start",
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    marginBottom: 20,
+  },
+  addMedBtnText: { color: colors.primary, fontWeight: "700", fontSize: 13 },
   saveBtn: {
     backgroundColor: colors.primary,
     borderRadius: radii.md,

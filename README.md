@@ -44,13 +44,24 @@ the app live on your phone without building anything — great for checking
 the UI/logic quickly.
 
 ## Notes / next steps
-- Default lock is a **pattern** (S-shape: 1-2-3-6-5-4-7-8-9). Change it via
-  the ⋮ menu → Change Password on the home screen (PIN or pattern, your choice).
-- **Backup Data** (⋮ menu) exports all records to a JSON file via the share
-  sheet — save it to Drive, email it to yourself, etc. **Restore Data**
+- Default lock is a **pattern** (3-2-1-4-5-6-9-8-7). Change it via the ⋮
+  menu → Change Password on the home screen (PIN or pattern, your choice).
+- Patient record now includes **RCH ID, Address, Phone Number, VHN Name,
+  VHN Number**. Date of birth was removed; **Date of Admission / Date of
+  Discharge** are now editable fields (DD/MM/YY, typed or picker).
+- **Medications** are line items (Drug / Frequency / Duration), add/remove
+  rows freely — no more single free-text treatment field.
+- **Investigations** are a separate daily log per stay (tap "View
+  Investigations" on a record) — each entry is one date's full panel (Hb,
+  PCV, coagulation, biochemistry, imaging, glycemic profile) plus notes for
+  that day. Displayed as a grid: tests as rows, dates as columns, matching
+  the paper labour-room sheet.
+- **Backup Data** (⋮ menu) exports all records (including medications and
+  investigations) to a JSON file via the share sheet. **Restore Data**
   loads a backup back in (replaces current records — confirmation required).
-- Individual records export as **PDF** (from the detail screen); the current
-  filtered/visible list exports as **Excel** (from the ⋮ menu).
+- Individual records export as **PDF** (from the detail screen, includes
+  the medications table); the current filtered/visible list exports as
+  **Excel** (from the ⋮ menu).
 - Home screen groups records by day, with a month switcher, filter chips
   (All/Admitted/Discharged), and a cycling sort button (Date/Name/Diagnosis).
 - All icons are vector icons via `@expo/vector-icons` (Ionicons) — no emoji

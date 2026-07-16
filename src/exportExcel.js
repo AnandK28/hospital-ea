@@ -4,11 +4,11 @@ import * as Sharing from "expo-sharing";
 
 export async function exportRowsToExcel(rows, filename) {
   const headers = [
-    "Patient ID", "First Name", "Last Name", "MRN", "DOB",
-    "Stay ID", "Diagnosis", "Admission Date", "Discharge Date",
+    "Patient ID", "First Name", "Last Name", "MRN", "RCH ID", "Phone Number",
+    "Stay ID", "Diagnosis", "Date of Admission", "Date of Discharge",
   ];
   const data = rows.map((r) => [
-    r.patient_id, r.first_name, r.last_name, r.mrn, r.dob,
+    r.patient_id, r.first_name, r.last_name, r.mrn, r.rch_id, r.phone_number,
     r.stay_id, r.primary_diagnosis, r.admission_date, r.discharge_date,
   ]);
 

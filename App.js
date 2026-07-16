@@ -8,6 +8,8 @@ import SearchScreen from "./src/screens/SearchScreen";
 import DetailScreen from "./src/screens/DetailScreen";
 import RecordFormScreen from "./src/screens/RecordFormScreen";
 import ChangeLockScreen from "./src/screens/ChangeLockScreen";
+import InvestigationsScreen from "./src/screens/InvestigationsScreen";
+import InvestigationEntryFormScreen from "./src/screens/InvestigationEntryFormScreen";
 
 // Where the hardware/gesture back button should go from each screen.
 // "search" is the root — back from there falls through to the OS (exits app).
@@ -16,12 +18,15 @@ const BACK_TARGET = {
   add: "search",
   edit: "detail",
   changeLock: "search",
+  investigations: "detail",
+  investigationEntry: "investigations",
 };
 
 export default function App() {
   const [ready, setReady] = useState(false);
-  const [screen, setScreen] = useState("lock"); // lock | search | detail | add | edit | changeLock
+  const [screen, setScreen] = useState("lock");
   const [activeStayId, setActiveStayId] = useState(null);
+  const [activeEntryId, setActiveEntryId] = useState(null);
 
   useEffect(() => {
     initDb().then(() => setReady(true));
@@ -31,9 +36,9 @@ export default function App() {
     const target = BACK_TARGET[screen];
     if (target) {
       setScreen(target);
-      return true; // handled — don't exit the app
+      return true;
     }
-    return false; // on "search" (or "lock") — let the OS handle it (exits app)
+    return false;
   }, [screen]);
 
   useEffect(() => {
@@ -74,6 +79,7 @@ export default function App() {
             setActiveStayId(stayId);
             setScreen("edit");
           }}
+          onOpenInvestigations={() => setScreen("investigations")}
         />
       )}
 
@@ -96,6 +102,30 @@ export default function App() {
 
       {screen === "changeLock" && (
         <ChangeLockScreen onBack={() => setScreen("search")} />
+      )}
+
+      {screen === "investigations" && (
+        <InvestigationsScreen
+          stayId={activeStayId}
+          onBack={() => setScreen("detail")}
+          onAddEntry={() => {
+            setActiveEntryId(null);
+            setScreen("investigationEntry");
+          }}
+          onEditEntry={(entryId) => {
+            setActiveEntryId(entryId);
+            setScreen("investigationEntry");
+          }}
+        />
+      )}
+
+      {screen === "investigationEntry" && (
+        <InvestigationEntryFormScreen
+          stayId={activeStayId}
+          entryId={activeEntryId}
+          onBack={() => setScreen("investigations")}
+          onSaved={() => setScreen("investigations")}
+        />
       )}
     </>
   );
