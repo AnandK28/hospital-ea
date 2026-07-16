@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { getLock } from "../db";
 import PatternPad from "../PatternPad";
 import { colors } from "../theme";
@@ -50,7 +51,7 @@ export default function LockScreen({ onUnlock }) {
   return (
     <View style={styles.container}>
       <View style={styles.lockIcon}>
-        <Text style={styles.lockIconText}>🔒</Text>
+        <Ionicons name="lock-closed" size={28} color={colors.primary} />
       </View>
       <Text style={styles.appName}>Hospital Records</Text>
       <Text style={styles.title}>
@@ -79,7 +80,11 @@ export default function LockScreen({ onUnlock }) {
                 onPress={() => handleKey(k)}
                 activeOpacity={0.6}
               >
-                <Text style={styles.keyText}>{k === "DEL" ? "⌫" : k}</Text>
+                {k === "DEL" ? (
+                  <Ionicons name="backspace-outline" size={22} color={colors.textPrimary} />
+                ) : (
+                  <Text style={styles.keyText}>{k}</Text>
+                )}
               </TouchableOpacity>
             ))}
           </View>
@@ -108,7 +113,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 16,
   },
-  lockIconText: { fontSize: 28 },
   appName: { color: colors.textPrimary, fontSize: 20, fontWeight: "700", marginBottom: 4 },
   title: { color: colors.textSecondary, fontSize: 14, marginBottom: 28 },
   pinDotsRow: { flexDirection: "row", marginBottom: 32, minHeight: 16 },

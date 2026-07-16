@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { getLock, setLock } from "../db";
 import PatternPad from "../PatternPad";
 import { colors, radii } from "../theme";
@@ -49,8 +50,9 @@ export default function ChangeLockScreen({ onBack }) {
   return (
     <View style={styles.container}>
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={onBack}>
-          <Text style={styles.topBarBtn}>‹ Back</Text>
+        <TouchableOpacity onPress={onBack} style={styles.backRow}>
+          <Ionicons name="chevron-back" size={20} color={colors.primary} />
+          <Text style={styles.topBarBtn}>Back</Text>
         </TouchableOpacity>
         <Text style={styles.topBarTitle}>Change Lock</Text>
         <View style={{ width: 50 }} />
@@ -153,6 +155,7 @@ const styles = StyleSheet.create({
   },
   topBarTitle: { color: colors.textPrimary, fontSize: 17, fontWeight: "700" },
   topBarBtn: { color: colors.primary, fontSize: 15, fontWeight: "600" },
+  backRow: { flexDirection: "row", alignItems: "center", gap: 2 },
   content: { padding: 24, alignItems: "center", marginTop: 20 },
   label: { fontSize: 15, color: colors.textPrimary, marginBottom: 18, textAlign: "center" },
   input: {

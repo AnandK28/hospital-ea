@@ -1,22 +1,45 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { StatusBar } from "expo-status-bar";
-import { View, ActivityIndicator } from "react-native";
+import { View, ActivityIndicator, BackHandler } from "react-native";
 import { initDb } from "./src/db";
 import { colors } from "./src/theme";
 import LockScreen from "./src/screens/LockScreen";
 import SearchScreen from "./src/screens/SearchScreen";
 import DetailScreen from "./src/screens/DetailScreen";
-import AddScreen from "./src/screens/AddScreen";
+import RecordFormScreen from "./src/screens/RecordFormScreen";
 import ChangeLockScreen from "./src/screens/ChangeLockScreen";
+
+// Where the hardware/gesture back button should go from each screen.
+// "search" is the root — back from there falls through to the OS (exits app).
+const BACK_TARGET = {
+  detail: "search",
+  add: "search",
+  edit: "detail",
+  changeLock: "search",
+};
 
 export default function App() {
   const [ready, setReady] = useState(false);
-  const [screen, setScreen] = useState("lock"); // lock | search | detail | add | changeLock
+  const [screen, setScreen] = useState("lock"); // lock | search | detail | add | edit | changeLock
   const [activeStayId, setActiveStayId] = useState(null);
 
   useEffect(() => {
     initDb().then(() => setReady(true));
   }, []);
+
+  const goBack = useCallback(() => {
+    const target = BACK_TARGET[screen];
+    if (target) {
+      setScreen(target);
+      return true; // handled — don't exit the app
+    }
+    return false; // on "search" (or "lock") — let the OS handle it (exits app)
+  }, [screen]);
+
+  useEffect(() => {
+    const sub = BackHandler.addEventListener("hardwareBackPress", goBack);
+    return () => sub.remove();
+  }, [goBack]);
 
   if (!ready) {
     return (
@@ -43,11 +66,32 @@ export default function App() {
       )}
 
       {screen === "detail" && (
-        <DetailScreen stayId={activeStayId} onBack={() => setScreen("search")} />
+        <DetailScreen
+          stayId={activeStayId}
+          onBack={() => setScreen("search")}
+          onOpenDetail={(stayId) => setActiveStayId(stayId)}
+          onEdit={(stayId) => {
+            setActiveStayId(stayId);
+            setScreen("edit");
+          }}
+        />
       )}
 
       {screen === "add" && (
-        <AddScreen onBack={() => setScreen("search")} onSaved={() => setScreen("search")} />
+        <RecordFormScreen
+          mode="add"
+          onBack={() => setScreen("search")}
+          onSaved={() => setScreen("search")}
+        />
+      )}
+
+      {screen === "edit" && (
+        <RecordFormScreen
+          mode="edit"
+          stayId={activeStayId}
+          onBack={() => setScreen("detail")}
+          onSaved={() => setScreen("detail")}
+        />
       )}
 
       {screen === "changeLock" && (

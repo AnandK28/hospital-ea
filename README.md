@@ -43,10 +43,21 @@ Scan the QR code with the **Expo Go** app (from the Play Store) to preview
 the app live on your phone without building anything — great for checking
 the UI/logic quickly.
 
-## Notes
-- Default PIN is `1234` — change it via the key icon on the search screen
-  (lets you switch between PIN and pattern lock).
-- Excel exports are saved to the app's private storage and immediately
-  opened in the native share sheet, so you can save them to Google Drive,
-  WhatsApp, email, etc.
+## Notes / next steps
+- Default lock is a **pattern** (S-shape: 1-2-3-6-5-4-7-8-9). Change it via
+  the ⋮ menu → Change Password on the home screen (PIN or pattern, your choice).
+- **Backup Data** (⋮ menu) exports all records to a JSON file via the share
+  sheet — save it to Drive, email it to yourself, etc. **Restore Data**
+  loads a backup back in (replaces current records — confirmation required).
+- Individual records export as **PDF** (from the detail screen); the current
+  filtered/visible list exports as **Excel** (from the ⋮ menu).
+- Home screen groups records by day, with a month switcher, filter chips
+  (All/Admitted/Discharged), and a cycling sort button (Date/Name/Diagnosis).
+- All icons are vector icons via `@expo/vector-icons` (Ionicons) — no emoji
+  anywhere in the UI.
+- New native dependencies added since the first build:
+  `@expo/vector-icons`, `@react-native-community/datetimepicker`,
+  `expo-print`, `expo-document-picker`. Run `npx expo install --fix` after
+  `npm install` to align versions with your Expo SDK before building.
+- No demo data is seeded — the app starts empty.
 - 3 demo patients are seeded on first launch.
